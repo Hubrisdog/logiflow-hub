@@ -12,6 +12,7 @@ export interface UserProfile {
   created_at: string;
   updated_at: string;
   supplier_id?: string | null;
+  organization_id?: string | null;
 }
 
 export const useAuth = () => {
@@ -19,6 +20,21 @@ export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeOrgId, setActiveOrgId] = useState<string>(() => localStorage.getItem('logiflow_active_org_id') || 'mock-org-1');
+  const [organizations, setOrganizations] = useState<{ id: string; name: string }[]>([
+    { id: 'mock-org-1', name: 'LogiFlow Hub Demo Org' },
+    { id: 'mock-org-2', name: 'Global Logistics Partners' },
+    { id: 'mock-org-3', name: 'Apex Warehousing' }
+  ]);
+
+  const switchOrganization = (id: string) => {
+    setActiveOrgId(id);
+    localStorage.setItem('logiflow_active_org_id', id);
+    const selected = organizations.find((o) => o.id === id);
+    toast.success(`Switched active workspace to "${selected?.name || id}"`);
+    window.dispatchEvent(new CustomEvent('logiflow_org_changed', { detail: id }));
+  };
+
 
   const cleanupAuthState = () => {
     Object.keys(localStorage).forEach((key) => {
@@ -41,8 +57,13 @@ export const useAuth = () => {
         
         if (error) throw error;
         
-        if (isMounted) {
-          setProfile(data as UserProfile);
+        if (isMounted && data) {
+          const userProfile = data as UserProfile;
+          setProfile(userProfile);
+          if (userProfile.organization_id) {
+            setActiveOrgId(userProfile.organization_id);
+            localStorage.setItem('logiflow_active_org_id', userProfile.organization_id);
+          }
         }
       } catch (err) {
         console.error('Error fetching profile:', err);
@@ -157,6 +178,7 @@ export const useAuth = () => {
             name: isDemoAdmin ? 'Demo Admin' : (isDemoStaff ? 'Demo Staff' : 'Demo Supplier'),
             role: role,
             supplier_id: isDemoSupplier ? 'demo-sup-1' : undefined,
+            organization_id: 'mock-org-1',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
@@ -253,6 +275,10 @@ export const useAuth = () => {
     signIn,
     signUp,
     signOut,
+    activeOrgId,
+    organizations,
+    switchOrganization,
+    activeOrgName: organizations.find(o => o.id === activeOrgId)?.name || 'Demo Org',
     isAuthenticated: !!user,
     isAdmin: profile?.role === 'admin',
     isStaff: profile?.role === 'staff',

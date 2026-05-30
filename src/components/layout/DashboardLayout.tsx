@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
@@ -23,7 +23,9 @@ import {
 import { cn } from "@/lib/utils";
 import { HelpButton } from "@/components/help/HelpButton";
 import { NotificationCenter } from "./NotificationCenter";
- 
+import { useAuth } from "@/hooks/useAuth";
+import { syncQueue } from "@/lib/syncQueue";
+
 interface User {
   id: string;
   email: string;
@@ -50,6 +52,69 @@ export const DashboardLayout = ({
   const [isDark, setIsDark] = useState(() => {
     return document.documentElement.classList.contains('dark');
   });
+
+  const { activeOrgId, organizations, switchOrganization } = useAuth();
+  const [syncStatus, setSyncStatus] = useState<'online' | 'syncing' | 'pending_sync' | 'offline'>(() => 
+    navigator.onLine ? 'online' : 'offline'
+  );
+  const [pendingCount, setPendingCount] = useState<number>(0);
+
+  useEffect(() => {
+    const handleStatus = (e: Event) => setSyncStatus((e as CustomEvent).detail);
+    const handleQueue = (e: Event) => setPendingCount((e as CustomEvent).detail);
+    
+    window.addEventListener('logiflow_sync_status', handleStatus as EventListener);
+    window.addEventListener('logiflow_sync_queue_changed', handleQueue as EventListener);
+    
+    // Initial check of queue length
+    const queue = syncQueue.getQueue();
+    setPendingCount(queue.length);
+    if (queue.length > 0) {
+      setSyncStatus('pending_sync');
+    }
+
+    return () => {
+      window.removeEventListener('logiflow_sync_status', handleStatus as EventListener);
+      window.removeEventListener('logiflow_sync_queue_changed', handleQueue as EventListener);
+    };
+  }, []);
+
+  const getSyncBadge = () => {
+    switch (syncStatus) {
+      case 'online':
+        return (
+          <div className="flex items-center space-x-1.5 px-2 bg-green-500/10 border border-green-500/20 text-green-500 text-xs rounded-full py-1 pr-2.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse ml-1" />
+            <span className="font-semibold">Sync: Online</span>
+          </div>
+        );
+      case 'syncing':
+        return (
+          <div className="flex items-center space-x-1.5 px-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-xs rounded-full py-1 pr-2.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse ml-1" />
+            <span className="font-semibold">Syncing...</span>
+          </div>
+        );
+      case 'pending_sync':
+        return (
+          <div 
+            onClick={() => syncQueue.processQueue()}
+            title="Click to force reconcile pending queue" 
+            className="flex items-center space-x-1.5 px-2 bg-orange-500/10 border border-orange-500/20 text-orange-500 text-xs rounded-full py-1 pr-2.5 cursor-pointer hover:bg-orange-500/20 transition-all"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse ml-1" />
+            <span className="font-semibold">Pending ({pendingCount})</span>
+          </div>
+        );
+      case 'offline':
+        return (
+          <div className="flex items-center space-x-1.5 px-2 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-full py-1 pr-2.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse ml-1" />
+            <span className="font-semibold">Sync: Offline</span>
+          </div>
+        );
+    }
+  };
 
   const toggleTheme = () => {
     if (isDark) {
@@ -90,7 +155,7 @@ export const DashboardLayout = ({
   const navItems = user.role === 'admin' ? adminNavItems : staffNavItems;
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background text-foreground">
       {/* Sidebar */}
       <div className={cn(
         "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col",
@@ -106,14 +171,14 @@ export const DashboardLayout = ({
           <Button
             variant="ghost"
             size="sm"
-            className="lg:hidden"
+            className="lg:hidden text-foreground hover:bg-muted"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
 
-        <nav className="flex-1 px-4 py-4 space-y-2">
+        <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -121,7 +186,7 @@ export const DashboardLayout = ({
                 key={item.id}
                 variant={currentPage === item.id ? "secondary" : "ghost"}
                 className={cn(
-                  "w-full justify-start font-medium",
+                  "w-full justify-start font-medium text-foreground hover:bg-muted/50",
                   currentPage === item.id && "bg-primary/10 text-primary hover:bg-primary/20 font-semibold"
                 )}
                 onClick={() => {
@@ -139,7 +204,7 @@ export const DashboardLayout = ({
         <div className="p-4 border-t">
           <div className="flex items-center space-x-3 mb-3">
             <Avatar className="h-8 w-8 transition-all hover:ring-2 hover:ring-primary/40 cursor-pointer">
-              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
                 {user.name.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
@@ -151,7 +216,7 @@ export const DashboardLayout = ({
           <Button 
             variant="ghost" 
             size="sm" 
-            className="w-full justify-start text-destructive hover:text-destructive"
+            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={onLogout}
           >
             <LogOut className="mr-2 h-4 w-4" />
@@ -161,25 +226,48 @@ export const DashboardLayout = ({
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col lg:ml-0">
+      <div className="flex-1 flex flex-col lg:ml-0 overflow-hidden">
         {/* Header */}
         <header className="h-16 bg-card border-b flex items-center justify-between px-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-          <h1 className="text-xl font-bold capitalize text-foreground">
-            {currentPage === 'dashboard' ? `${user.role} Dashboard` : currentPage}
-          </h1>
           <div className="flex items-center space-x-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden text-foreground hover:bg-muted"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+            
+            <div className="flex items-center space-x-2.5">
+              <h1 className="text-lg font-bold capitalize text-foreground hidden md:block">
+                {currentPage === 'dashboard' ? `${user.role} Dashboard` : currentPage.replace('-', ' ')}
+              </h1>
+              
+              {/* SaaS Multi-tenant Workspace Switcher */}
+              <select
+                value={activeOrgId}
+                onChange={(e) => switchOrganization(e.target.value)}
+                className="bg-card text-foreground text-xs font-bold border border-border rounded-lg py-1.5 px-2.5 focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer hover:bg-muted transition-all"
+              >
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    🪐 {org.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            {getSyncBadge()}
+            
             <span className="text-sm text-muted-foreground hidden sm:inline font-medium">
               Welcome, {user.name}
             </span>
+            
             <NotificationCenter onNavigate={onNavigate} />
+            
             <Button
               variant="ghost"
               size="icon"
@@ -194,7 +282,7 @@ export const DashboardLayout = ({
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-4">
+        <main className="flex-1 overflow-auto p-4 bg-background">
           {children}
         </main>
       </div>

@@ -33,6 +33,7 @@ import {
   Navigation,
   FileText
 } from "lucide-react";
+import { cn } from '@/lib/utils';
 import { usePurchaseOrders } from '@/hooks/usePurchaseOrders';
 import { useInventory } from '@/hooks/useInventory';
 import type { PurchaseOrder, PurchaseOrderItem, InventoryItem } from '@/types/inventory';
@@ -404,6 +405,48 @@ export const SupplierPortal = ({ user, onLogout }: SupplierPortalProps) => {
                   <span className="text-sm font-semibold">
                     {selectedPO.tracking_number ? `${selectedPO.carrier} (${selectedPO.tracking_number})` : 'Awaiting Shipment'}
                   </span>
+                </div>
+              </div>
+
+              {/* Visual Shipping and Procurement Timeline */}
+              <div className="space-y-3 p-4 bg-muted/20 border rounded-lg">
+                <Label className="text-xs font-bold text-muted-foreground uppercase block">Procurement Timeline Tracker</Label>
+                <div className="flex items-center justify-between mt-2 text-xs">
+                  <div className="flex flex-col items-center">
+                    <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center font-bold">1</div>
+                    <span className="mt-1 font-semibold text-foreground text-[10px]">Draft Approval</span>
+                  </div>
+                  <div className="h-0.5 flex-1 bg-green-500 mx-2" />
+                  <div className="flex flex-col items-center">
+                    <div className={cn("w-6 h-6 rounded-full flex items-center justify-center font-bold text-white text-[10px]", 
+                      (selectedPO.status === 'ordered' || selectedPO.status === 'received') ? "bg-green-500" : "bg-muted text-muted-foreground border"
+                    )}>2</div>
+                    <span className={cn("mt-1 font-semibold text-[10px]", 
+                      (selectedPO.status === 'ordered' || selectedPO.status === 'received') ? "text-foreground" : "text-muted-foreground"
+                    )}>Ordered</span>
+                  </div>
+                  <div className={cn("h-0.5 flex-1 mx-2", 
+                    selectedPO.tracking_number ? "bg-green-500" : "bg-muted"
+                  )} />
+                  <div className="flex flex-col items-center">
+                    <div className={cn("w-6 h-6 rounded-full flex items-center justify-center font-bold text-white text-[10px]", 
+                      selectedPO.tracking_number ? "bg-green-500" : "bg-muted text-muted-foreground border"
+                    )}>3</div>
+                    <span className={cn("mt-1 font-semibold text-[10px]", 
+                      selectedPO.tracking_number ? "text-foreground" : "text-muted-foreground"
+                    )}>In Transit</span>
+                  </div>
+                  <div className={cn("h-0.5 flex-1 mx-2", 
+                    selectedPO.status === 'received' ? "bg-green-500" : "bg-muted"
+                  )} />
+                  <div className="flex flex-col items-center">
+                    <div className={cn("w-6 h-6 rounded-full flex items-center justify-center font-bold text-white text-[10px]", 
+                      selectedPO.status === 'received' ? "bg-green-500" : "bg-muted text-muted-foreground border"
+                    )}>4</div>
+                    <span className={cn("mt-1 font-semibold text-[10px]", 
+                      selectedPO.status === 'received' ? "text-foreground" : "text-muted-foreground"
+                    )}>Delivered</span>
+                  </div>
                 </div>
               </div>
 
