@@ -47,6 +47,21 @@ export const DashboardLayout = ({
   onNavigate 
 }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    return document.documentElement.classList.contains('dark');
+  });
+
+  const toggleTheme = () => {
+    if (isDark) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setIsDark(true);
+    }
+  };
  
   const adminNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -165,6 +180,15 @@ export const DashboardLayout = ({
               Welcome, {user.name}
             </span>
             <NotificationCenter onNavigate={onNavigate} />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="relative hover:bg-muted text-foreground focus-accent rounded-full hover:ring-2 hover:ring-primary/30 transition-all"
+              title="Toggle Theme"
+            >
+              {isDark ? <Sun className="h-5 w-5 text-warning" /> : <Moon className="h-5 w-5 text-primary" />}
+            </Button>
             <HelpButton />
           </div>
         </header>

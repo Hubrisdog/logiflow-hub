@@ -1,12 +1,29 @@
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Package, BarChart3, Users, Shield, Loader2, Orbit } from "lucide-react";
+import { ArrowRight, Package, BarChart3, Users, Shield, Loader2, Orbit, Sun, Moon } from "lucide-react";
 import { Dashboard } from "@/pages/Dashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { SupplierPortal } from "@/pages/SupplierPortal";
 
 const Index = () => {
   const { user, profile, loading, signOut } = useAuth();
+
+  const [isDark, setIsDark] = useState(() => {
+    return document.documentElement.classList.contains('dark');
+  });
+
+  const toggleTheme = () => {
+    if (isDark) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setIsDark(true);
+    }
+  };
 
   if (loading) {
     return (
@@ -44,9 +61,31 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex flex-col">
+      {/* Top Floating Header */}
+      <header className="container mx-auto px-4 h-16 flex items-center justify-between border-b border-border/10">
+        <div className="flex items-center space-x-2">
+          <Orbit className="h-6 w-6 text-primary animate-pulse-slow" />
+          <span className="font-extrabold text-lg text-foreground bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">LogiFlow</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="hover:bg-muted text-foreground focus-accent rounded-full hover:ring-2 hover:ring-primary/30 transition-all"
+            title="Toggle Theme"
+          >
+            {isDark ? <Sun className="h-5 w-5 text-warning" /> : <Moon className="h-5 w-5 text-primary" />}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => window.location.href = '/auth'} className="text-sm font-semibold hover:bg-primary/10 hover:text-primary transition-colors">
+            Sign In
+          </Button>
+        </div>
+      </header>
+
       {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-16 flex-1 flex flex-col justify-center">
         <div className="text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-primary/10 rounded-[2rem] mb-8 border-2 border-primary/20 shadow-glow animate-pulse-slow">
             <Orbit className="h-12 w-12 text-primary" />
