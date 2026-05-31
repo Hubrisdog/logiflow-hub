@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="banner.png" alt="LogiFlow Hub Banner" width="100%">
+  <img src="images/dashboard.png" alt="LogiFlow Hub Dashboard" width="100%">
 </p>
 
 <p align="center">
