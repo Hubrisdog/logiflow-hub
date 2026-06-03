@@ -21,6 +21,68 @@ The project is a personal architecture and product-design experiment focused on 
 
 ---
 
+## 📌 Project Scope & Reality Check
+
+LogiFlow Hub is a personal architecture and product-design study. While the core features are functional, the project is primarily intended to analyze and implement complex operational software patterns rather than serve as a commercial production deployment.
+
+---
+
+## 🛠️ Tech Stack & State
+
+* **Web Frontend:** React 18 + TypeScript + Vite + Tailwind (Volt Orange/Electric Cyan theme)
+* **Mobile Frontend:** React Native (Expo SDK 51) for warehouse floor scanning
+* **Backend:** Supabase (Postgres + RLS for strict multi-tenant isolation)
+* **Offline Engine:** LocalStorage fallback queue serialization for mutation tracking during drops
+* **Accounting Core:** First-In, First-Out (FIFO) asset batch ledger computation for dynamic COGS mapping
+
+---
+
+## 📸 Core Workflows & Code Evidence
+
+### 1. FIFO Valuation & Audit Ledger
+
+<img src="images/Inventory.png" alt="LogiFlow Hub Dashboard" width="100%">
+
+> How FIFO prevents drift when stock is partially consumed across batches
+
+### 2. Multi-Tenant Data Boundaries (PostgreSQL RLS)
+
+```sql
+-- RLS enforced, no client-side trust
+-- From /supabase/migrations/20260531000000_phase6_saas_multi_tenant.sql
+ALTER TABLE inventory_items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can only mutate items within their active organization" 
+ON inventory_items 
+FOR ALL 
+USING (organization_id = (auth.jwt() ->> 'user_metadata')::jsonb ->> 'active_organization_id');
+```
+
+### 3. Mobile Warehouse Scanner Viewport
+
+> Device camera viewport tracking with scanning line animation loop
+
+---
+
+## 🧠 Engineering Lessons & Scars
+
+* **The Reconnect Storm Bug:** First version duplicated ledger entries on reconnect storms (took 3 days to notice, balances were subtly wrong). Multiple rapid network toggles triggered parallel queue flushes before local state cleared. Fixed with `isReconciling` mutex state—queue now blocks execution until previous batch transaction explicitly resolves.
+* **Offline sync > standard CRUD:** Intercepting write drops, serializing locally, and guaranteeing sequential, non-blocking reconciliation when network drops requires strict state isolation.
+* **Accounting logic dictates schema:** True FIFO tracking cannot be retrofitted onto a generic "quantity" column. It requires an immutable, batch-oriented transaction ledger schema.
+* **Database-level isolation:** Front-end wrapper logic for multi-tenancy is a massive vulnerability. Enforcing boundaries directly via PostgreSQL RLS rules guarantees data isolation regardless of client state.
+
+---
+
+## 📜 Engineering Principles
+
+* **Offline-first** when operational continuity matters on the warehouse floor.
+* **Security enforced** at the database layer via strict RLS policies.
+* **Explicit schema evolution** driven through sequential, append-only SQL migrations.
+* **Type-safe boundaries** strictly maintained across the entire stack.
+* **Inventory and financial events** are permanently auditable and ledger-backed.
+
+---
+
 ## 🏗️ System Architecture
 
 This flow diagram illustrates how LogiFlow Hub orchestrates local state, offline synchronization, and multi-tenant isolation across the platform:
@@ -52,16 +114,33 @@ flowchart TD
 
 ---
 
+## 📈 Development Status
+
+### Current Focus:
+
+* **Role-Based Access Control (RBAC):** Mapped to organization IDs at the database level (`Admin`, `Manager`, `Picker`).
+* **Real-Time State Sync:** Moving low-stock alerts and notifications to native WebSockets via Supabase Realtime.
+* **Multi-Warehouse Transfers:** Interface and database hooks to log and authorize stock movements between physical locations.
+* **Queue Edge-Case Testing:** Automated integration tests for out-of-order execution in the offline queue.
+
+### Last Major Update:
+
+* June 2026
+
+---
+
 ## 🛠️ Key Enterprise Systems
 
 All core modules of the LogiFlow Enterprise roadmap have been successfully implemented and integrated:
 
 ### 🏢 1. Multi-Tenant SaaS Scoping
+
 - Scopes profiles, catalogs, locations, and transactions dynamically by active `organization_id`.
 - Features an organization selector dropdown in the header to switch active tenants instantly.
 - Enforces data security boundaries via multi-tenant PostgreSQL Row Level Security (RLS) rules.
 
 ### 📴 2. Offline-Resilient Sync Queue
+
 - Automatically intercepts database write errors and network drops, serializing transactions in a local storage queue.
 - Reconciles the database sequentially once the browser detects restored connectivity.
 - Displays a glowing connection status badge in the header:
@@ -71,16 +150,19 @@ All core modules of the LogiFlow Enterprise roadmap have been successfully imple
   - <kbd>🔴 Offline</kbd> • Disconnected.
 
 ### 📈 3. GAAP Compliant FIFO Accounting Ledger
+
 - Computes inventory valuation ledgers using the First-In-First-Out (FIFO) costing method.
 - Dedicates oldest stock batches first on item removals to calculate precise Cost of Goods Sold (COGS).
 - Displays side-by-side comparison tables mapping Average Projections vs. FIFO valuations and audit variances.
 
 ### 🔔 4. Smart Notification Drawer
+
 - Generates real-time alerts based on low safety stock levels, incoming purchase dispatches, and ledger sync states.
 - Incorporates a **Web Audio API** synthesizer that issues a soft triangle-wave chime alert for low-stock warnings on page load.
 - Features a dropdown notifications drawer with action endpoints that route users directly to relevant control panels.
 
 ### 📊 5. Predictive Run-out Velocity Forecasting
+
 - Computes average consumption velocity (`removals / timeRange` days) for each product based on historical transaction logs.
 - Projects days of supply remaining with color-coded alerts:
   - 🔴 **Critical** (<= 10 days remaining)
@@ -89,29 +171,34 @@ All core modules of the LogiFlow Enterprise roadmap have been successfully imple
 - Plots a projected 30-day stock depletion path (`Quantity - Velocity * Day`) for top critical items on a custom Recharts Line Chart.
 
 ### ⚙️ 6. Automated Restock Hub
+
 - Offers a safety-stock multiplier slider to scale reorder quantities dynamically.
 - Runs a suggestion engine that highlights products below minimum limits, letting admins check and dispatch bulk draft Purchase Orders in one click.
 
 ### 💼 7. Supplier Portal & Shipping Timeline
+
 - A dedicated dashboard for vendor accounts to manage incoming POs, declare shipping carrier and tracking IDs, and manage catalog unit pricing.
 - Renders an interactive shipping timeline tracker (Draft Approval ➡️ Ordered ➡️ In Transit ➡️ Delivered) with client-side SMTP invoice dispatch simulation.
 
 ### 📷 8. Integrated Barcode Scanning
+
 - Activates device camera viewport with scanning laser line animation loops.
 - Synthesizes audio beep feedbacks on successful scans and triggers automated item edits or stock updates.
 
 ### 💵 9. Financial Integration Sync
+
 - Computes Cost of Goods Sold (COGS) dynamically across transaction logs.
 - Exports formatted valuation lists matching QuickBooks Online (Inventory Valuation) and Xero (Bills/Accounts Payable) CSV schemas.
 
 ### 📱 10. Mobile Companion Hub
+
 - React Native companion app located in `/mobile`, built with Expo SDK 51, providing a synced mobile experience.
 
 ---
 
 ## 📁 Repository Layout
 
-```
+```text
 ├── mobile/                   # React Native Expo Mobile Companion App
 ├── supabase/
 │   └── migrations/           # PostgreSQL Schema DDL Migrations
@@ -142,6 +229,7 @@ npm install
 # Start the Vite development server
 npm run dev
 ```
+
 The application will launch on your local host at `http://localhost:8080/`.
 
 ### 2. Mobile Companion Setup (Expo)
@@ -156,6 +244,7 @@ npm install
 # Launch the Expo bundler
 npx expo start
 ```
+
 * Press **`w`** to open inside your local browser.
 * Scan the console QR code using the **Expo Go** application on your physical device.
 
@@ -164,33 +253,42 @@ npx expo start
 ## 📊 Database Schema DDL
 
 The PostgreSQL database is managed via Supabase. Apply the migration scripts in the `/supabase/migrations/` directory in the following order:
+
 1. **Multi-Location Inventory & POs:** `20260530000000_phase1_enterprise.sql`
 2. **Supplier Dispatch & Logistics:** `20260530000100_phase2_automation.sql`
 3. **SaaS Multi-Tenancy & RLS:** `20260531000000_phase6_saas_multi_tenant.sql`
 
 ---
-![Project Status: Active](https://img.shields.io/badge/Project%20Status-Active-brightgreen?style=for-the-badge&logo=github)
-![Current Version](https://img.shields.io/badge/Version-v0.8.0--beta-electriccyan?style=for-the-badge)
 
 ## 🗺️ Product Roadmap
 
 ### Phase 1: Inventory Foundation (Completed)
-- [x] Multi-Tenant SaaS Scoping via RLS
-- [x] FIFO Accounting Engine for precise COGS
-- [x] Offline Sync Queue caching
-- [x] Device-Native Barcode Scanning
-- [x] Mobile Companion Hub (Expo)
 
-### Phase 2: Warehouse Operations (Current Focus)
-- [ ] **Role-Based Access Control (RBAC):** Granular permission boundaries mapped at the DB level.
-- [ ] **Real-Time State Sync:** Migrating low-stock alerts to native WebSockets via Supabase Realtime.
-- [ ] **Multi-Warehouse Rebalancing:** Authorized stock movements between physical locations.
-- [ ] **Integration Test Coverage:** Automated testing for the offline queue to guarantee zero out-of-order execution.
+* **[x] Multi-Tenant SaaS Scoping:** Dynamic data isolation bounded strictly by active organization IDs.
+* **[x] FIFO Accounting Engine:** Asset-batch tracking to prevent valuation drift and calculate precise COGS.
+* **[x] Offline Sync Queue:** Serialized local caching to capture client mutations during network drops.
+* **[x] Device-Native Barcode Scanning:** Integrated camera viewport scanning loop with Web Audio chime feedback.
+* **[x] Mobile Companion Hub:** Synced cross-platform mobile application framework for real-time tracking.
 
-### Phase 3 & 4: Automation & Logistics (Planned)
-- [ ] Consumption Velocity Forecasting via edge functions.
-- [ ] Automated Purchase Order Drafting.
-- [ ] Carrier Tracking API Integrations.
-- [ ] Bulk Delivery Dispatch workflows for fleet drivers.
+### Phase 2: Warehouse Operations & Platform Hardening (Current Focus)
+
+* **[ ] Role-Based Access Control (RBAC):** Granular permission boundaries enforced directly at the database level.
+* **[ ] Real-Time State Synchronization:** Migrating alerts and drawer notifications to native WebSockets via Supabase Realtime.
+* **[ ] Multi-Warehouse Rebalancing:** Interface and database hooks to track and authorize stock movements between locations.
+* **[ ] Database Query Optimization:** Query profiling and composite index implementations on transaction foreign keys.
+* **[ ] Integration Test Coverage:** Automated testing for the offline queue reconciliation loop to guarantee zero out-of-order execution.
+
+### Phase 3: Procurement Automation (Planned)
+
+* **[ ] Consumption Velocity Forecasting:** Moving velocity calculations to edge functions processing historical transaction logs.
+* **[ ] Automated Reordering Engine:** Framework to automatically draft Purchase Orders when safety stock drops below thresholds.
+* **[ ] Vendor Performance Metrics:** Analytics tracking supplier fulfillment velocities and unit pricing variances over time.
+
+### Phase 4: Logistics & Network Execution (Planned)
+
+* **[ ] Carrier Tracking Integrations:** Interfacing with external logistics provider APIs to surface shipment status updates.
+* **[ ] Bulk Delivery Dispatching:** Grouping sorted picking slips into multi-stop fulfillment workflows for local fleet drivers.
+
+---
 
 *Built by [Hubris](https://github.com/Hubrisdog)*
