@@ -166,5 +166,28 @@ The PostgreSQL database is managed via Supabase. Apply the migration scripts in 
 3. **SaaS Multi-Tenancy & RLS:** `20260531000000_phase6_saas_multi_tenant.sql`
 
 ---
+![Project Status: Active](https://img.shields.io/badge/Project%20Status-Active-brightgreen?style=for-the-badge&logo=github)
+![Current Version](https://img.shields.io/badge/Version-v0.8.0--beta-electriccyan?style=for-the-badge)
+
+## 🗺️ Product Roadmap
+
+### Phase 1: Inventory Foundation (Completed)
+- [x] Multi-Tenant SaaS Scoping via RLS
+- [x] FIFO Accounting Engine for precise COGS
+- [x] Offline Sync Queue caching
+- [x] Device-Native Barcode Scanning
+- [x] Mobile Companion Hub (Expo)
+
+### Phase 2: Warehouse Operations (Current Focus)
+- [ ] **Role-Based Access Control (RBAC):** Granular permission boundaries mapped at the DB level.
+- [ ] **Real-Time State Sync:** Migrating low-stock alerts to native WebSockets via Supabase Realtime.
+- [ ] **Multi-Warehouse Rebalancing:** Authorized stock movements between physical locations.
+- [ ] **Integration Test Coverage:** Automated testing for the offline queue to guarantee zero out-of-order execution.
+
+### Phase 3 & 4: Automation & Logistics (Planned)
+- [ ] Consumption Velocity Forecasting via edge functions.
+- [ ] Automated Purchase Order Drafting.
+- [ ] Carrier Tracking API Integrations.
+- [ ] Bulk Delivery Dispatch workflows for fleet drivers.
 
 *Built by [Hubris](https://github.com/Hubrisdog)*
