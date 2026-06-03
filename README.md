@@ -12,9 +12,12 @@
 
 # LogiFlow Hub 🪐
 
-LogiFlow Hub is a premium, dark-mode-first, enterprise-grade inventory intelligence and logistics orchestration platform. Built with a custom **Volt Orange & Electric Cyan** color system, it delivers a high-contrast dashboard aesthetic optimized for rapid operations.
+LogiFlow Hub is a project used to explore inventory accounting, offline synchronization, multi-tenant SaaS architecture, and warehouse workflow design through a working implementation built with React, TypeScript, and Supabase.
 
-The project is fully modular, type-safe, resilient to offline network drops, GAAP compliant, and includes a **React Native (Expo)** companion mobile app for on-the-floor warehouse scanning.
+The project is a personal architecture and product-design experiment focused on operational software patterns rather than a commercial production deployment.
+
+![Project Status: Active](https://img.shields.io/badge/Project%20Status-Active-brightgreen?style=for-the-badge&logo=github)
+![Current Version](https://img.shields.io/badge/Version-v0.8.0--beta-electriccyan?style=for-the-badge)
 
 ---
 
