@@ -41,7 +41,7 @@ LogiFlow Hub is a personal architecture and product-design study. While the core
 
 ### 1. FIFO Valuation & Audit Ledger
 
-<img src="images/Inventory.png" alt="LogiFlow Hub Dashboard" width="100%">
+<img src="images/AccountingHub.png" alt="LogiFlow Hub Dashboard" width="100%">
 
 > How FIFO prevents drift when stock is partially consumed across batches
 
